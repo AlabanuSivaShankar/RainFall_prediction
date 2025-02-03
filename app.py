@@ -221,6 +221,47 @@ st.pyplot(fig)  # Ensure box plots appear in Streamlit
 
 
 
+
+
+file_path = "https://raw.githubusercontent.com/AlabanuSivaShankar/RainFall_prediction/main/Rainfall.csv"
+data = pd.read_csv(file_path)
+
+# Preprocess the data
+data.columns = data.columns.str.strip()  # Strip whitespace from column names
+data = data.drop(columns=["day"], errors='ignore')  # Drop unnecessary column
+
+# Convert categorical rainfall column to numerical
+data["rainfall"] = data["rainfall"].map({"yes": 1, "no": 0})
+
+# Handle missing values
+data["winddirection"].fillna(data["winddirection"].mode()[0], inplace=True)
+data["windspeed"].fillna(data["windspeed"].median(), inplace=True)
+
+# Select numerical columns for box plots
+boxplot_columns = ["pressure", "dewpoint", "humidity", "cloud", "windspeed"]
+
+st.subheader("Feature Box Plots")
+
+# Create a single figure for multiple boxplots
+fig, axes = plt.subplots(1, len(boxplot_columns), figsize=(20, 5))
+
+# Generate box plots for each feature
+for i, column in enumerate(boxplot_columns):
+    sns.boxplot(data=data, x="rainfall", y=column, ax=axes[i])
+    axes[i].set_title(f"{column} by Rainfall")
+
+# Adjust layout and display in Streamlit
+plt.tight_layout()
+st.pyplot(fig)  # Ensure it appears in Streamlit
+
+
+
+
+
+
+
+
+
 # Sample prediction
 input_data = (1015.9, 19.9, 95, 81, 0.0, 40.0, 13.7)
 input_df = pd.DataFrame([input_data], columns=['pressure', 'dewpoint', 'humidity', 'cloud', 'sunshine','winddirection', 'windspeed'])
