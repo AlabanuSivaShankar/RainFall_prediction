@@ -133,11 +133,32 @@ for i, column in enumerate(['pressure', 'maxtemp', 'temparature', 'mintemp', 'de
 plt.tight_layout()
 plt.show()
 
+
+# Visualizations in Streamlit
+st.subheader("Feature Distributions")
+sns.set(style="whitegrid")
+fig, axes = plt.subplots(3, 3, figsize=(15, 10))
+
+for i, column in enumerate(['pressure', 'maxtemp', 'temparature', 'mintemp', 'dewpoint', 'humidity', 'cloud', 'sunshine', 'windspeed']):
+    row, col = divmod(i, 3)
+    sns.histplot(data[column], kde=True, ax=axes[row, col])
+    axes[row, col].set_title(f"Distribution of {column}")
+
+plt.tight_layout()
+st.pyplot(fig)  # 👈 **This ensures it appears in Streamlit**
+
+
 # Correlation heatmap
 plt.figure(figsize=(10, 8))
 sns.heatmap(data.corr(), annot=True, cmap="coolwarm", fmt=".2f")
 plt.title("Correlation Heatmap")
 plt.show()
+
+st.subheader("Correlation Heatmap")
+fig, ax = plt.subplots(figsize=(10, 8))
+sns.heatmap(data.corr(), annot=True, cmap="coolwarm", fmt=".2f", ax=ax)
+st.pyplot(fig)  # 👈 **Ensure the heatmap appears**
+
 
 # Drop highly correlated columns
 data = data.drop(columns=['maxtemp', 'temparature', 'mintemp'])
@@ -197,3 +218,6 @@ feature_names = loaded_model_data["feature_names"]
 input_df = pd.DataFrame([input_data], columns=feature_names)
 prediction = loaded_model.predict(input_df)
 print("Loaded Model Prediction:", "Rainfall" if prediction[0] == 1 else "No Rainfall")
+
+st.pyplot(fig)
+plt.show()
