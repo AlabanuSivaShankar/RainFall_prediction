@@ -11,7 +11,7 @@ import pickle
 import os
 
 # Load the dataset
-DATA_PATH = "C:/Users/Durga Prasad/Desktop/Final-year project/Rainfall.csv"  # Update the file path
+DATA_PATH = "https://raw.githubusercontent.com/AlabanuSivaShankar/RainFall_prediction/main/Rainfall.csv"  # Updated file path
 MODEL_PATH = "rainfall_prediction_model.pkl"
 
 def load_data():
