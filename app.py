@@ -137,7 +137,8 @@ st.write("Enter the weather conditions below to predict whether it will rain or 
 pressure = st.slider("Pressure (hPa)", min_value=950.0, max_value=1050.0, value=1015.9, step=0.1)
 dewpoint = st.slider("Dew Point (°C)", min_value=-50.0, max_value=50.0, value=19.9, step=0.1)
 humidity = st.slider("Humidity (%)", min_value=0.0, max_value=100.0, value=95.0, step=0.1)
-cloud = st.slider("Cloud Cover (%)", min_value=0.0, max_value=100.0, value=81.0, step=1)
+cloud = st.slider("Cloud Cover (%)", min_value=0.0, max_value=100.0, value=81.0, step=0.1)
+
 sunshine = st.slider("Sunshine Hours", min_value=0.0, max_value=24.0, value=0.0, step=0.1)
 winddirection = st.slider("Wind Direction (°)", min_value=0.0, max_value=360.0, value=40.0, step=1)
 windspeed = st.slider("Wind Speed (km/h)", min_value=0.0, max_value=100.0, value=13.7, step=0.1)
