@@ -213,6 +213,11 @@ for i, column in enumerate(boxplot_columns):
     sns.boxplot(data=data, x="rainfall", y=column, ax=axes[row, col])
     axes[row, col].set_title(f"Boxplot of {column} by Rainfall")
 
+# Adjust layout and render
+plt.tight_layout()
+st.pyplot(fig)  # Ensure box plots appear in Streamlit
+
+
 
 
 
@@ -239,6 +244,3 @@ print("Loaded Model Prediction:", "Rainfall" if prediction[0] == 1 else "No Rain
 
 st.pyplot(fig)
 plt.show()
-# Adjust layout and render
-plt.tight_layout()
-st.pyplot(fig)  # Ensure box plots appear in Streamlit
