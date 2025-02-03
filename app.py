@@ -89,7 +89,8 @@ import pickle
 import os
 
 # Define file path
-file_path = "C:/Users/Durga Prasad/Desktop/Final-year project/Rainfall.csv"
+file_path = "https://raw.githubusercontent.com/AlabanuSivaShankar/RainFall_prediction/main/Rainfall.csv"
+
 
 # Check if file exists before loading
 if not os.path.exists(file_path):
