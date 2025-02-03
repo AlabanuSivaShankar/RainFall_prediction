@@ -223,12 +223,15 @@ st.pyplot(fig)  # Ensure box plots appear in Streamlit
 
 
 
-file_path = "https://raw.githubusercontent.com/AlabanuSivaShankar/RainFall_prediction/main/Rainfall.csv"
-data = pd.read_csv(file_path)
+@st.cache_data
+def load_data():
+    return pd.read_csv(file_path)
+
+data = load_data()
 
 # Preprocess the data
 data.columns = data.columns.str.strip()  # Strip whitespace from column names
-data = data.drop(columns=["day"], errors='ignore')  # Drop unnecessary column
+data.drop(columns=["day"], errors='ignore', inplace=True)  # Drop unnecessary column
 
 # Convert categorical rainfall column to numerical
 data["rainfall"] = data["rainfall"].map({"yes": 1, "no": 0})
@@ -237,10 +240,11 @@ data["rainfall"] = data["rainfall"].map({"yes": 1, "no": 0})
 data["winddirection"].fillna(data["winddirection"].mode()[0], inplace=True)
 data["windspeed"].fillna(data["windspeed"].median(), inplace=True)
 
-# Select numerical columns for box plots
-boxplot_columns = ["pressure", "dewpoint", "humidity", "cloud", "windspeed"]
+# Display box plots in Streamlit
+st.subheader("📊 Feature Box Plots")
 
-st.subheader("Feature Box Plots")
+# Define numerical columns for boxplots
+boxplot_columns = ["pressure", "dewpoint", "humidity", "cloud", "windspeed"]
 
 # Create a single figure for multiple boxplots
 fig, axes = plt.subplots(1, len(boxplot_columns), figsize=(20, 5))
@@ -250,15 +254,11 @@ for i, column in enumerate(boxplot_columns):
     sns.boxplot(data=data, x="rainfall", y=column, ax=axes[i])
     axes[i].set_title(f"{column} by Rainfall")
 
+
+
 # Adjust layout and display in Streamlit
 plt.tight_layout()
-st.pyplot(fig)  # Ensure it appears in Streamlit
-
-
-
-
-
-
+st.pyplot(fig)  # ✅ Box plots will now appear in Streamlit
 
 
 
@@ -282,6 +282,10 @@ feature_names = loaded_model_data["feature_names"]
 input_df = pd.DataFrame([input_data], columns=feature_names)
 prediction = loaded_model.predict(input_df)
 print("Loaded Model Prediction:", "Rainfall" if prediction[0] == 1 else "No Rainfall")
+
+
+
+
 
 st.pyplot(fig)
 plt.show()
