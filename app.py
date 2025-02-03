@@ -198,6 +198,24 @@ print("Test set Accuracy:", accuracy_score(y_test, y_pred))
 print("Test set Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
 print("Classification Report:\n", classification_report(y_test, y_pred))
 
+
+# Box plot visualizations
+st.subheader("Feature Box Plots")
+
+# Define the columns you want to visualize
+boxplot_columns = ['pressure', 'dewpoint', 'humidity', 'cloud', 'windspeed']
+
+# Create box plots for selected columns
+fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+
+for i, column in enumerate(boxplot_columns):
+    row, col = divmod(i, 3)
+    sns.boxplot(data=data, x="rainfall", y=column, ax=axes[row, col])
+    axes[row, col].set_title(f"Boxplot of {column} by Rainfall")
+
+
+
+
 # Sample prediction
 input_data = (1015.9, 19.9, 95, 81, 0.0, 40.0, 13.7)
 input_df = pd.DataFrame([input_data], columns=['pressure', 'dewpoint', 'humidity', 'cloud', 'sunshine','winddirection', 'windspeed'])
@@ -221,3 +239,6 @@ print("Loaded Model Prediction:", "Rainfall" if prediction[0] == 1 else "No Rain
 
 st.pyplot(fig)
 plt.show()
+# Adjust layout and render
+plt.tight_layout()
+st.pyplot(fig)  # Ensure box plots appear in Streamlit
