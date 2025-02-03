@@ -134,13 +134,17 @@ st.title("🌧️ Rainfall Prediction App")
 st.write("Enter the weather conditions below to predict whether it will rain or not.")
 
 # User Input Fields
-pressure = st.number_input("Pressure (hPa)", value=1015.9)
-dewpoint = st.number_input("Dew Point (°C)", value=19.9)
-humidity = st.number_input("Humidity (%)", value=95.0)
-cloud = st.number_input("Cloud Cover (%)", value=81.0)
-sunshine = st.number_input("Sunshine Hours", value=0.0)
-winddirection = st.number_input("Wind Direction (°)", value=40.0)
-windspeed = st.number_input("Wind Speed (km/h)", value=13.7)
+pressure = st.slider("Pressure (hPa)", min_value=950.0, max_value=1050.0, value=1015.9, step=0.1)
+dewpoint = st.slider("Dew Point (°C)", min_value=-50.0, max_value=50.0, value=19.9, step=0.1)
+humidity = st.slider("Humidity (%)", min_value=0.0, max_value=100.0, value=95.0, step=0.1)
+cloud = st.slider("Cloud Cover (%)", min_value=0.0, max_value=100.0, value=81.0, step=1)
+sunshine = st.slider("Sunshine Hours", min_value=0.0, max_value=24.0, value=0.0, step=0.1)
+winddirection = st.slider("Wind Direction (°)", min_value=0.0, max_value=360.0, value=40.0, step=1)
+windspeed = st.slider("Wind Speed (km/h)", min_value=0.0, max_value=100.0, value=13.7, step=0.1)
+
+
+# Display selected values
+st.write(f"Selected Values: Pressure={pressure}, Dewpoint={dewpoint}, Humidity={humidity}, Cloud={cloud}, Wind Speed={windspeed}")
 
 if st.button("Predict Rainfall"):
     input_data = pd.DataFrame([[pressure, dewpoint, humidity, cloud, sunshine, winddirection, windspeed]],
