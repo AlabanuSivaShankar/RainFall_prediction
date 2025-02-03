@@ -49,7 +49,8 @@ st.subheader("Dataset Overview")
 st.write(data.head())
 
 # Display box plots in Streamlit
-st.subheader("\ud83d\udcca Feature Box Plots")
+st.subheader("Feature Box Plots")  # 🔥 Removing emoji
+
 boxplot_columns = ["pressure", "dewpoint", "humidity", "cloud", "windspeed"]
 
 fig, axes = plt.subplots(1, len(boxplot_columns), figsize=(20, 5))
