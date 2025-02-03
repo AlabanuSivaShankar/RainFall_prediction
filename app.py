@@ -93,8 +93,13 @@ file_path = "https://raw.githubusercontent.com/AlabanuSivaShankar/RainFall_predi
 
 
 # Check if file exists before loading
-if not os.path.exists(file_path):
-    raise FileNotFoundError(f"File not found: {file_path}")
+# Load dataset directly from URL
+try:
+    data = pd.read_csv(file_path)
+except Exception as e:
+    st.error(f"Error loading dataset: {e}")
+    st.stop()
+
 
 # Load the dataset into a pandas dataframe
 data = pd.read_csv(file_path)
