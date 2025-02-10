@@ -30,7 +30,13 @@ def load_data():
 
 @st.cache_data
 def load_data():
-    return pd.read_csv(file_path)
+    try:
+        data = pd.read_csv(DATA_PATH)
+        return data
+    except Exception as e:
+        st.error(f"Error loading dataset: {e}")
+        st.stop()
+
 
 data = load_data()
 
