@@ -108,6 +108,12 @@ if location:
 # User Input Fields (Manual Input as Backup)
 # Ensure pressure has a default value before using it in st.slider()
 pressure = None  # Initialize the variable
+dewpoint = None
+humidity = None
+cloud = None
+windspeed = None
+winddirection = None
+sunshine = None
 
 
 
