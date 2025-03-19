@@ -14,7 +14,7 @@ from sklearn.ensemble import RandomForestClassifier
 # Constants
 DATA_PATH = "https://raw.githubusercontent.com/AlabanuSivaShankar/RainFall_prediction/main/Rainfall.csv"
 MODEL_PATH = "rainfall_prediction_model.pkl"
-OPENWEATHERMAP_API_KEY = os.getenv("WEATHER_API_KEY", "b53fa2ee256e02d9df2dee58371d93a3")  # Default API Key
+OPENWEATHERMAP_API_KEY = os.getenv("WEATHER_API_KEY", "b53fa2ee256e02d9df2dee58371d93a3")
 
 # Load dataset
 @st.cache_data
@@ -68,70 +68,60 @@ else:
 st.title("🌧️ Rainfall Prediction App")
 st.write("Enter the weather conditions below to predict whether it will rain or not.")
 
-# Default weather parameters
-default_values = {
-    "pressure": 1015.9,
-    "dewpoint": 19.9,
-    "humidity": 95.0,
-    "cloud": 81.0,
-    "windspeed": 13.7,
-    "winddirection": 40,
-    "sunshine": 0.0
-}
-
 # Fetch location-based weather data
-st.subheader("📍 Location-Based Weather Data")
-location = st.text_input("Enter Location (City, Country):")
+def get_weather_by_location(lat, lon):
+    url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
+    response = requests.get(url)
+    if response.status_code == 200:
+        weather_data = response.json()
+        temperature = weather_data['main'].get('temp', 19.9)
+        humidity = weather_data['main'].get('humidity', 95.0)
+        dewpoint = temperature - ((100 - humidity) / 5)
+        return {
+            "pressure": weather_data['main'].get('pressure', 1015.9),
+            "humidity": humidity,
+            "cloud": weather_data['clouds'].get('all', 81.0),
+            "windspeed": weather_data['wind'].get('speed', 13.7),
+            "winddirection": weather_data['wind'].get('deg', 40),
+            "dewpoint": dewpoint,
+            "sunshine": 0.0
+        }
+    return None
 
-if location:
-    try:
+# Location input
+st.subheader("📍 Location-Based Weather Data")
+use_device_location = st.checkbox("Use My Location")
+location = ""
+
+if use_device_location:
+    location_data = st.experimental_get_query_params()
+    if 'lat' in location_data and 'lon' in location_data:
+        lat, lon = float(location_data['lat'][0]), float(location_data['lon'][0])
+        st.write(f"🌍 **Detected Location:** Latitude {lat}, Longitude {lon}")
+        default_values = get_weather_by_location(lat, lon) or {}
+    else:
+        st.warning("⚠️ Please allow location access in your browser.")
+else:
+    location = st.text_input("Enter Location (City, Country):")
+    if location:
         geolocator = Nominatim(user_agent="rainfall_app")
         location_data = geolocator.geocode(location)
-        
         if location_data:
             lat, lon = location_data.latitude, location_data.longitude
-            st.write(f"Latitude: {lat}, Longitude: {lon}")
-
-            url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
-            response = requests.get(url)
-
-            if response.status_code == 200:
-                weather_data = response.json()
-                temperature = weather_data['main'].get('temp', 19.9)
-                humidity = weather_data['main'].get('humidity', 95.0)
-                
-                # Calculate dew point (approximation)
-                dewpoint = temperature - ((100 - humidity) / 5)
-                
-                default_values.update({
-                    "pressure": weather_data['main'].get('pressure', 1015.9),
-                    "humidity": humidity,
-                    "cloud": weather_data['clouds'].get('all', 81.0),
-                    "windspeed": weather_data['wind'].get('speed', 13.7),
-                    "winddirection": weather_data['wind'].get('deg', 40),
-                    "dewpoint": dewpoint,
-                    "sunshine": 0.0  # OpenWeatherMap does not provide sunshine data
-                })
-
-                st.write("✅ **Fetched Weather Data:**")
-                st.json(default_values)
-            else:
-                st.error("❌ Failed to fetch weather data. Using default values.")
-
+            st.write(f"🌍 **Detected Location:** Latitude {lat}, Longitude {lon}")
+            default_values = get_weather_by_location(lat, lon) or {}
         else:
             st.error("❌ Location not found. Please enter a valid location.")
-    except Exception as e:
-        st.error(f"❌ Error fetching weather data: {e}")
 
 # Manual Weather Input
 st.subheader("✏️ Manual Weather Data Input")
-pressure = st.slider("Pressure (hPa)", 950.0, 1050.0, float(default_values["pressure"]), 0.1)
-dewpoint = st.slider("Dew Point (°C)", -50.0, 50.0, float(default_values["dewpoint"]), 0.1)
-humidity = st.slider("Humidity (%)", 0.0, 100.0, float(default_values["humidity"]), 0.1)
-cloud = st.slider("Cloud Cover (%)", 0.0, 100.0, float(default_values["cloud"]), 0.1)
-windspeed = st.slider("Wind Speed (km/h)", 0.0, 100.0, float(default_values["windspeed"]), 0.1)
-winddirection = st.slider("Wind Direction (°)", 0, 360, int(default_values["winddirection"]), 1)
-sunshine = st.slider("Sunshine Hours", 0.0, 24.0, float(default_values["sunshine"]), 0.1)
+pressure = st.slider("Pressure (hPa)", 950.0, 1050.0, float(default_values.get("pressure", 1015.9)), 0.1)
+dewpoint = st.slider("Dew Point (°C)", -50.0, 50.0, float(default_values.get("dewpoint", 19.9)), 0.1)
+humidity = st.slider("Humidity (%)", 0.0, 100.0, float(default_values.get("humidity", 95.0)), 0.1)
+cloud = st.slider("Cloud Cover (%)", 0.0, 100.0, float(default_values.get("cloud", 81.0)), 0.1)
+windspeed = st.slider("Wind Speed (km/h)", 0.0, 100.0, float(default_values.get("windspeed", 13.7)), 0.1)
+winddirection = st.slider("Wind Direction (°)", 0, 360, int(default_values.get("winddirection", 40)), 1)
+sunshine = st.slider("Sunshine Hours", 0.0, 24.0, float(default_values.get("sunshine", 0.0)), 0.1)
 
 # Predict Rainfall
 if st.button("🚀 Predict Rainfall"):
