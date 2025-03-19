@@ -113,7 +113,7 @@ if location:
         st.error("Location not found. Please enter a valid location.")
 
 
-# Ensure parameters have default values before use
+"""# Ensure parameters have default values before use
 if pressure is None:
     pressure = 1015.9
 if dewpoint is None:
@@ -127,7 +127,7 @@ if windspeed is None:
 if winddirection is None:
     winddirection = 40
 if sunshine is None:
-    sunshine = 0.0
+    sunshine = 0.0"""
 
 # Debugging step to verify fetched values
 st.write(f"Fetched Weather Data: Pressure={pressure}, Dew Point={dewpoint}, Humidity={humidity}, "
