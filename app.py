@@ -84,49 +84,45 @@ if location:
 
     if location_data:
         lat, lon = location_data.latitude, location_data.longitude
-        st.write(f"Latitude: {lat}, Longitude: {lon}")
+        st.write(f"📍 Latitude: {lat}, Longitude: {lon}")
 
         url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
         response = requests.get(url)
 
         if response.status_code == 200:
             weather_data = response.json()
-            pressure = weather_data['main']['pressure']
-            dewpoint = weather_data['main']['humidity']  # Approximate dew point
-            humidity = weather_data['main']['humidity']
-            cloud = weather_data['clouds']['all']
-            windspeed = weather_data['wind']['speed']
-            winddirection = weather_data['wind']['deg']
-            sunshine = 0  # OpenWeatherMap does not provide sunshine data
+            pressure = weather_data['main'].get('pressure', 1013)  # Default: 1013 hPa
+            humidity = weather_data['main'].get('humidity', 50)  # Default: 50%
+            cloud = weather_data['clouds'].get('all', 50)  # Default: 50%
+            windspeed = weather_data['wind'].get('speed', 5.0)  # Default: 5 km/h
+            winddirection = weather_data['wind'].get('deg', 180)  # Default: 180°
             
-            st.write(f"Fetched Weather Data:\nPressure: {pressure} hPa, Dew Point: {dewpoint} °C, Humidity: {humidity}%, Cloud Cover: {cloud}%, Wind Speed: {windspeed} km/h, Wind Direction: {winddirection}°")
+            # Calculate Approximate Dew Point using a basic formula
+            temp = weather_data['main'].get('temp', 25)  # Default: 25°C
+            dewpoint = temp - ((100 - humidity) / 5)  # Approximate formula
+
+            st.write(f"✅ Fetched Weather Data:")
+            st.write(f"- **Pressure:** {pressure} hPa")
+            st.write(f"- **Dew Point:** {dewpoint:.2f} °C")
+            st.write(f"- **Humidity:** {humidity}%")
+            st.write(f"- **Cloud Cover:** {cloud}%")
+            st.write(f"- **Wind Speed:** {windspeed} km/h")
+            st.write(f"- **Wind Direction:** {winddirection}°")
+
         else:
-            st.error("Failed to fetch weather data. Please check your API key or try again later.")
+            st.error("❌ Failed to fetch weather data. Please check API key or try again later.")
     else:
-        st.error("Location not found. Please enter a valid location.")
+        st.error("❌ Location not found. Please enter a valid location.")
 
-# User Input Fields (Manual Input as Backup)
-# Ensure pressure has a default value before using it in st.slider()
-pressure = None  # Initialize the variable
-dewpoint = None
-humidity = None
-cloud = None
-windspeed = None
-winddirection = None
-sunshine = None
-
-
-
+# Manual Input Fields (Backup)
 st.subheader("Manual Weather Data Input")
-pressure = st.slider("Pressure (hPa)", 950.0, 1050.0, 1015.9 if pressure is None else pressure, 0.1)
-dewpoint = st.slider("Dew Point (°C)", -50.0, 50.0, 19.9 if dewpoint is None else dewpoint, 0.1)
-humidity = st.slider("Humidity (%)", 0.0, 100.0, 95.0 if humidity is None else humidity, 0.1)
-cloud = st.slider("Cloud Cover (%)", 0.0, 100.0, 81.0 if cloud is None else cloud, 0.1)
-windspeed = st.slider("Wind Speed (km/h)", 0.0, 100.0, 13.7 if windspeed is None else windspeed, 0.1)
-winddirection = st.slider("Wind Direction (°)", 0, 360, 40 if winddirection is None else winddirection, 1)
-sunshine = st.slider("Sunshine Hours", 0.0, 24.0, 0.0 if sunshine is None else sunshine, 0.1)
-
-
+pressure = st.slider("Pressure (hPa)", 950.0, 1050.0, pressure, 0.1)
+dewpoint = st.slider("Dew Point (°C)", -50.0, 50.0, dewpoint, 0.1)
+humidity = st.slider("Humidity (%)", 0.0, 100.0, humidity, 0.1)
+cloud = st.slider("Cloud Cover (%)", 0.0, 100.0, cloud, 0.1)
+windspeed = st.slider("Wind Speed (km/h)", 0.0, 100.0, windspeed, 0.1)
+winddirection = st.slider("Wind Direction (°)", 0, 360, winddirection, 1)
+sunshine = st.slider("Sunshine Hours", 0.0, 24.0, sunshine, 0.1)
 
 # Prediction Button
 if st.button("Predict Rainfall"):
@@ -135,7 +131,7 @@ if st.button("Predict Rainfall"):
     result = "🌧️ Rainfall Expected" if prediction[0] == 1 else "☀️ No Rainfall"
     st.subheader(f"Prediction: {result}")
 
-# Visualizations
+# Data Visualizations
 data = load_data()
 data = preprocess_data(data)
 
