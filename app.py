@@ -1,11 +1,9 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+import requests
 import pickle
 import os
-import requests
 from geopy.geocoders import Nominatim
 from sklearn.utils import resample
 from sklearn.model_selection import train_test_split
@@ -68,50 +66,60 @@ else:
 st.title("🌧️ Rainfall Prediction App")
 st.write("Enter the weather conditions below to predict whether it will rain or not.")
 
+# Default weather parameters
+default_values = {
+    "pressure": 1015.9,
+    "dewpoint": 19.9,
+    "humidity": 95.0,
+    "cloud": 81.0,
+    "windspeed": 13.7,
+    "winddirection": 40,
+    "sunshine": 0.0
+}
+
 # Fetch location-based weather data
-def get_weather_by_location(lat, lon):
-    url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
-    response = requests.get(url)
-    if response.status_code == 200:
-        weather_data = response.json()
-        temperature = weather_data['main'].get('temp', 19.9)
-        humidity = weather_data['main'].get('humidity', 95.0)
-        dewpoint = temperature - ((100 - humidity) / 5)
-        return {
-            "pressure": weather_data['main'].get('pressure', 1015.9),
-            "humidity": humidity,
-            "cloud": weather_data['clouds'].get('all', 81.0),
-            "windspeed": weather_data['wind'].get('speed', 13.7),
-            "winddirection": weather_data['wind'].get('deg', 40),
-            "dewpoint": dewpoint,
-            "sunshine": 0.0
-        }
-    return None
-
-# Location input
 st.subheader("📍 Location-Based Weather Data")
-use_device_location = st.checkbox("Use My Location")
-location = ""
 
-if use_device_location:
-    location_data = st.experimental_get_query_params()
-    if 'lat' in location_data and 'lon' in location_data:
-        lat, lon = float(location_data['lat'][0]), float(location_data['lon'][0])
-        st.write(f"🌍 **Detected Location:** Latitude {lat}, Longitude {lon}")
-        default_values = get_weather_by_location(lat, lon) or {}
-    else:
-        st.warning("⚠️ Please allow location access in your browser.")
-else:
-    location = st.text_input("Enter Location (City, Country):")
-    if location:
-        geolocator = Nominatim(user_agent="rainfall_app")
-        location_data = geolocator.geocode(location)
-        if location_data:
-            lat, lon = location_data.latitude, location_data.longitude
-            st.write(f"🌍 **Detected Location:** Latitude {lat}, Longitude {lon}")
-            default_values = get_weather_by_location(lat, lon) or {}
+# Check for browser location permission
+query_params = st.query_params
+latitude = query_params.get("latitude")
+longitude = query_params.get("longitude")
+
+if latitude and longitude:
+    try:
+        lat, lon = float(latitude[0]), float(longitude[0])
+        st.write(f"✅ **Detected Location:** Latitude: {lat}, Longitude: {lon}")
+
+        url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            weather_data = response.json()
+            temperature = weather_data['main'].get('temp', 19.9)
+            humidity = weather_data['main'].get('humidity', 95.0)
+
+            # Calculate dew point (approximation)
+            dewpoint = temperature - ((100 - humidity) / 5)
+
+            default_values.update({
+                "pressure": weather_data['main'].get('pressure', 1015.9),
+                "humidity": humidity,
+                "cloud": weather_data['clouds'].get('all', 81.0),
+                "windspeed": weather_data['wind'].get('speed', 13.7),
+                "winddirection": weather_data['wind'].get('deg', 40),
+                "dewpoint": dewpoint,
+                "sunshine": 0.0  # OpenWeatherMap does not provide sunshine data
+            })
+
+            st.write("✅ **Fetched Weather Data:**")
+            st.json(default_values)
         else:
-            st.error("❌ Location not found. Please enter a valid location.")
+            st.error("❌ Failed to fetch weather data. Using default values.")
+    except Exception as e:
+        st.error(f"❌ Error fetching weather data: {e}")
+
+else:
+    st.warning("⚠️ Please allow location access in your browser.")
 
 # Manual Weather Input
 st.subheader("✏️ Manual Weather Data Input")
