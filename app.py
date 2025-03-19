@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.utils import resample
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import pickle
@@ -12,16 +12,12 @@ import os
 from geopy.geocoders import Nominatim
 import requests
 
-API_KEY = os.getenv("WEATHER_API_KEY")
-
-# Constants
+# Load dataset
 DATA_PATH = "https://raw.githubusercontent.com/AlabanuSivaShankar/RainFall_prediction/main/Rainfall.csv"
 MODEL_PATH = "rainfall_prediction_model.pkl"
-OPENWEATHERMAP_API_KEY = "b53fa2ee256e02d9df2dee58371d93a3"  # Replace with your actual API key
+OPENWEATHERMAP_API_KEY = "b53fa2ee256e02d9df2dee58371d93a3"  # Replace with your OpenWeatherMap API key
 
-@st.cache_data
 def load_data():
-    """Load dataset from GitHub"""
     try:
         data = pd.read_csv(DATA_PATH)
         return data
@@ -29,18 +25,82 @@ def load_data():
         st.error(f"Error loading dataset: {e}")
         st.stop()
 
+@st.cache_data
+def load_data():
+    try:
+        data = pd.read_csv(DATA_PATH)
+        return data
+    except Exception as e:
+        st.error(f"Error loading dataset: {e}")
+        st.stop()
+
+data = load_data()
+
+# Preprocess the data
+data.columns = data.columns.str.strip()  # Strip whitespace from column names
+data.drop(columns=["day"], errors='ignore', inplace=True)  # Drop unnecessary column
+
+data["rainfall"] = data["rainfall"].map({"yes": 1, "no": 0})
+
+data["winddirection"].fillna(data["winddirection"].mode()[0], inplace=True)
+data["windspeed"].fillna(data["windspeed"].median(), inplace=True)
+
+# Display dataset
+st.title("Rainfall Prediction System")
+st.subheader("Dataset Overview")
+st.write(data.head())
+
+# Display box plots in Streamlit
+st.subheader("Feature Box Plots")  # 🔥 Removing emoji
+
+boxplot_columns = ["pressure", "dewpoint", "humidity", "cloud", "windspeed"]
+
+fig, axes = plt.subplots(1, len(boxplot_columns), figsize=(20, 5))
+for i, column in enumerate(boxplot_columns):
+    sns.boxplot(data=data, x="rainfall", y=column, ax=axes[i])
+    axes[i].set_title(f"{column} by Rainfall")
+plt.tight_layout()
+st.pyplot(fig)
+
+# Feature selection
+X = data.drop(columns=["rainfall"])
+y = data["rainfall"]
+
+# Split the data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train a RandomForest model
+st.markdown("### 🔍 Training RandomForest Model")  # Markdown supports emojis better
+
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+
+# Model evaluation
+y_pred = rf.predict(X_test)
+st.write("Accuracy Score:", accuracy_score(y_test, y_pred))
+st.write("Confusion Matrix:")
+st.write(confusion_matrix(y_test, y_pred))
+st.write("Classification Report:")
+st.text(classification_report(y_test, y_pred))
+
+# Save the trained model
+model_filename = "rainfall_model.pkl"
+with open(model_filename, "wb") as model_file:
+    pickle.dump(rf, model_file)
+st.success("Model trained and saved successfully!")
+
+# Preprocess dataset
 def preprocess_data(data):
-    """Preprocess dataset"""
     data.columns = data.columns.str.strip()
-    data.drop(columns=["day"], errors='ignore', inplace=True)
+    data = data.drop(columns=["day"], errors='ignore')
     data["winddirection"].fillna(data["winddirection"].mode()[0], inplace=True)
     data["windspeed"].fillna(data["windspeed"].median(), inplace=True)
     data["rainfall"] = data["rainfall"].map({"yes": 1, "no": 0})
     data.drop(columns=['maxtemp', 'temparature', 'mintemp'], errors='ignore', inplace=True)
     return data
 
+# Train model
 def train_model(data):
-    """Train a RandomForest model"""
     df_majority = data[data["rainfall"] == 1]
     df_minority = data[data["rainfall"] == 0]
     df_majority_downsampled = resample(df_majority, replace=False, n_samples=len(df_minority), random_state=42)
@@ -52,7 +112,6 @@ def train_model(data):
     
     rf_model = RandomForestClassifier(random_state=42)
     rf_model.fit(X_train, y_train)
-    
     return rf_model, X.columns.tolist()
 
 # Load or train model
@@ -72,84 +131,104 @@ else:
 st.title("🌧️ Rainfall Prediction App")
 st.write("Enter the weather conditions below to predict whether it will rain or not.")
 
-# Location-Based Weather Data
+# Location Input
 st.subheader("Location-Based Weather Data")
 location = st.text_input("Enter Location (City, Country):")
-
-pressure, dewpoint, humidity, cloud, windspeed, winddirection, sunshine = None, None, None, None, None, None, 0
 
 if location:
     geolocator = Nominatim(user_agent="rainfall_app")
     location_data = geolocator.geocode(location)
-
+    
     if location_data:
         lat, lon = location_data.latitude, location_data.longitude
         st.write(f"Latitude: {lat}, Longitude: {lon}")
-
+        
+        # Fetch weather data from OpenWeatherMap API
         url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
         response = requests.get(url)
-
+        weather_data = response.json()
+        
         if response.status_code == 200:
-            weather_data = response.json()
             pressure = weather_data['main']['pressure']
             dewpoint = weather_data['main']['humidity']  # Approximate dew point
             humidity = weather_data['main']['humidity']
             cloud = weather_data['clouds']['all']
             windspeed = weather_data['wind']['speed']
             winddirection = weather_data['wind']['deg']
-            sunshine = 0  # OpenWeatherMap does not provide sunshine data
+            sunshine = 0  # Sunshine data not available in OpenWeatherMap
             
-            st.write(f"Fetched Weather Data:\nPressure: {pressure} hPa, Dew Point: {dewpoint} °C, Humidity: {humidity}%, Cloud Cover: {cloud}%, Wind Speed: {windspeed} km/h, Wind Direction: {winddirection}°")
+            st.write("Fetched Weather Data:")
+            st.write(f"Pressure: {pressure} hPa")
+            st.write(f"Dew Point: {dewpoint} °C")
+            st.write(f"Humidity: {humidity}%")
+            st.write(f"Cloud Cover: {cloud}%")
+            st.write(f"Wind Speed: {windspeed} km/h")
+            st.write(f"Wind Direction: {winddirection}°")
+            
+            # Adjust parameters in the input fields
+            pressure = st.slider("Pressure (hPa)", min_value=950.0, max_value=1050.0, value=pressure, step=0.1)
+            dewpoint = st.slider("Dew Point (°C)", min_value=-50.0, max_value=50.0, value=dewpoint, step=0.1)
+            humidity = st.slider("Humidity (%)", min_value=0.0, max_value=100.0, value=humidity, step=0.1)
+            cloud = st.slider("Cloud Cover (%)", min_value=0.0, max_value=100.0, value=cloud, step=0.1)
+            windspeed = st.slider("Wind Speed (km/h)", min_value=0.0, max_value=100.0, value=windspeed, step=0.1)
+            winddirection = st.slider("Wind Direction (°)", min_value=0, max_value=360, value=winddirection, step=1)
+            sunshine = st.slider("Sunshine Hours", min_value=0.0, max_value=24.0, value=sunshine, step=0.1)
         else:
             st.error("Failed to fetch weather data. Please check your API key or try again later.")
     else:
         st.error("Location not found. Please enter a valid location.")
 
-# User Input Fields (Manual Input as Backup)
-# Ensure pressure has a default value before using it in st.slider()
-pressure = None  # Initialize the variable
-dewpoint = None
-humidity = None
-cloud = None
-windspeed = None
-winddirection = None
-sunshine = None
-
-
-
+# User Input Fields
 st.subheader("Manual Weather Data Input")
-pressure = st.slider("Pressure (hPa)", 950.0, 1050.0, 1015.9 if pressure is None else pressure, 0.1)
-dewpoint = st.slider("Dew Point (°C)", -50.0, 50.0, 19.9 if dewpoint is None else dewpoint, 0.1)
-humidity = st.slider("Humidity (%)", 0.0, 100.0, 95.0 if humidity is None else humidity, 0.1)
-cloud = st.slider("Cloud Cover (%)", 0.0, 100.0, 81.0 if cloud is None else cloud, 0.1)
-windspeed = st.slider("Wind Speed (km/h)", 0.0, 100.0, 13.7 if windspeed is None else windspeed, 0.1)
-winddirection = st.slider("Wind Direction (°)", 0, 360, 40 if winddirection is None else winddirection, 1)
-sunshine = st.slider("Sunshine Hours", 0.0, 24.0, 0.0 if sunshine is None else sunshine, 0.1)
+pressure = st.slider("Pressure (hPa)", min_value=950.0, max_value=1050.0, value=1015.9, step=0.1)
+dewpoint = st.slider("Dew Point (°C)", min_value=-50.0, max_value=50.0, value=19.9, step=0.1)
+humidity = st.slider("Humidity (%)", min_value=0.0, max_value=100.0, value=95.0, step=0.1)
+cloud = st.slider("Cloud Cover (%)", min_value=0.0, max_value=100.0, value=81.0, step=0.1)
+sunshine = st.slider("Sunshine Hours", min_value=0.0, max_value=24.0, value=0.0, step=0.1)
+winddirection = st.slider("Wind Direction (°)", min_value=0, max_value=360, value=40, step=1)
+windspeed = st.slider("Wind Speed (km/h)", min_value=0.0, max_value=100.0, value=13.7, step=0.1)
 
+# Display selected values
+st.write(f"Selected Values: Pressure={pressure}, Dewpoint={dewpoint}, Humidity={humidity}, Cloud={cloud}, Wind Speed={windspeed}")
 
-
-# Prediction Button
 if st.button("Predict Rainfall"):
-    input_data = pd.DataFrame([[pressure, dewpoint, humidity, cloud, sunshine, winddirection, windspeed]], columns=feature_names)
+    input_data = pd.DataFrame([[pressure, dewpoint, humidity, cloud, sunshine, winddirection, windspeed]],
+                              columns=feature_names)
     prediction = model.predict(input_data)
     result = "🌧️ Rainfall Expected" if prediction[0] == 1 else "☀️ No Rainfall"
     st.subheader(f"Prediction: {result}")
 
-# Visualizations
+# Load and process data for visualizations
 data = load_data()
 data = preprocess_data(data)
 
+# Feature Distributions
 st.subheader("Feature Distributions")
 fig, axes = plt.subplots(2, 3, figsize=(15, 10))
 columns_to_plot = ['pressure', 'dewpoint', 'humidity', 'cloud', 'sunshine', 'windspeed']
+
 for i, column in enumerate(columns_to_plot):
     row, col = divmod(i, 3)
     sns.histplot(data[column], kde=True, ax=axes[row, col])
     axes[row, col].set_title(f"Distribution of {column}")
+
 plt.tight_layout()
 st.pyplot(fig)
 
+# Correlation Heatmap
 st.subheader("Correlation Heatmap")
 fig, ax = plt.subplots(figsize=(10, 8))
 sns.heatmap(data.corr(), annot=True, cmap="coolwarm", fmt=".2f", ax=ax)
 st.pyplot(fig)
+
+# Box Plot Analysis
+st.subheader("Feature Box Plots")
+boxplot_columns = ['pressure', 'dewpoint', 'humidity', 'cloud', 'windspeed']
+fig, axes = plt.subplots(1, len(boxplot_columns), figsize=(20, 5))
+
+for i, column in enumerate(boxplot_columns):
+    sns.boxplot(data=data, x="rainfall", y=column, ax=axes[i])
+    axes[i].set_title(f"{column} by Rainfall")
+
+plt.tight_layout()
+st.pyplot(fig)  # Ensure boxplots appear
