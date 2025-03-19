@@ -106,6 +106,11 @@ if location:
         st.error("Location not found. Please enter a valid location.")
 
 # User Input Fields (Manual Input as Backup)
+# Ensure pressure has a default value before using it in st.slider()
+pressure = None  # Initialize the variable
+
+
+
 st.subheader("Manual Weather Data Input")
 pressure = st.slider("Pressure (hPa)", 950.0, 1050.0, 1015.9 if pressure is None else pressure, 0.1)
 dewpoint = st.slider("Dew Point (°C)", -50.0, 50.0, 19.9 if dewpoint is None else dewpoint, 0.1)
