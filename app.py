@@ -97,13 +97,19 @@ if location:
 
             if response.status_code == 200:
                 weather_data = response.json()
+                temperature = weather_data['main'].get('temp', 19.9)
+                humidity = weather_data['main'].get('humidity', 95.0)
+                
+                # Calculate dew point (approximation)
+                dewpoint = temperature - ((100 - humidity) / 5)
+                
                 default_values.update({
                     "pressure": weather_data['main'].get('pressure', 1015.9),
-                    "humidity": weather_data['main'].get('humidity', 95.0),
+                    "humidity": humidity,
                     "cloud": weather_data['clouds'].get('all', 81.0),
                     "windspeed": weather_data['wind'].get('speed', 13.7),
                     "winddirection": weather_data['wind'].get('deg', 40),
-                    "dewpoint": weather_data['main'].get('temp', 19.9) - ((100 - weather_data['main'].get('humidity', 95.0)) / 5),  # Approximate dew point
+                    "dewpoint": dewpoint,
                     "sunshine": 0.0  # OpenWeatherMap does not provide sunshine data
                 })
 
@@ -119,13 +125,13 @@ if location:
 
 # Manual Weather Input
 st.subheader("✏️ Manual Weather Data Input")
-pressure = st.slider("Pressure (hPa)", 950.0, 1050.0, default_values["pressure"], 0.1)
-dewpoint = st.slider("Dew Point (°C)", -50.0, 50.0, default_values["dewpoint"], 0.1)
-humidity = st.slider("Humidity (%)", 0.0, 100.0, default_values["humidity"], 0.1)
-cloud = st.slider("Cloud Cover (%)", 0.0, 100.0, default_values["cloud"], 0.1)
-windspeed = st.slider("Wind Speed (km/h)", 0.0, 100.0, default_values["windspeed"], 0.1)
-winddirection = st.slider("Wind Direction (°)", 0, 360, default_values["winddirection"], 1)
-sunshine = st.slider("Sunshine Hours", 0.0, 24.0, default_values["sunshine"], 0.1)
+pressure = st.slider("Pressure (hPa)", 950.0, 1050.0, float(default_values["pressure"]), 0.1)
+dewpoint = st.slider("Dew Point (°C)", -50.0, 50.0, float(default_values["dewpoint"]), 0.1)
+humidity = st.slider("Humidity (%)", 0.0, 100.0, float(default_values["humidity"]), 0.1)
+cloud = st.slider("Cloud Cover (%)", 0.0, 100.0, float(default_values["cloud"]), 0.1)
+windspeed = st.slider("Wind Speed (km/h)", 0.0, 100.0, float(default_values["windspeed"]), 0.1)
+winddirection = st.slider("Wind Direction (°)", 0, 360, int(default_values["winddirection"]), 1)
+sunshine = st.slider("Sunshine Hours", 0.0, 24.0, float(default_values["sunshine"]), 0.1)
 
 # Predict Rainfall
 if st.button("🚀 Predict Rainfall"):
@@ -133,21 +139,3 @@ if st.button("🚀 Predict Rainfall"):
     prediction = model.predict(input_data)
     result = "🌧️ Rainfall Expected" if prediction[0] == 1 else "☀️ No Rainfall"
     st.subheader(f"**Prediction: {result}**")
-
-# Data Visualization
-st.subheader("📊 Feature Distributions")
-data = load_data()
-data = preprocess_data(data)
-fig, axes = plt.subplots(2, 3, figsize=(15, 10))
-columns_to_plot = ['pressure', 'dewpoint', 'humidity', 'cloud', 'sunshine', 'windspeed']
-for i, column in enumerate(columns_to_plot):
-    row, col = divmod(i, 3)
-    sns.histplot(data[column], kde=True, ax=axes[row, col])
-    axes[row, col].set_title(f"Distribution of {column}")
-plt.tight_layout()
-st.pyplot(fig)
-
-st.subheader("🔥 Correlation Heatmap")
-fig, ax = plt.subplots(figsize=(10, 8))
-sns.heatmap(data.corr(), annot=True, cmap="coolwarm", fmt=".2f", ax=ax)
-st.pyplot(fig)
