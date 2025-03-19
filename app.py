@@ -76,7 +76,26 @@ st.write("Enter the weather conditions below to predict whether it will rain or 
 st.subheader("Location-Based Weather Data")
 location = st.text_input("Enter Location (City, Country):")
 
-pressure, dewpoint, humidity, cloud, windspeed, winddirection, sunshine = None, None, None, None, None, None, 0
+# Ensure parameters have default values before use
+if pressure is None:
+    pressure = 1015.9
+if dewpoint is None:
+    dewpoint = 19.9
+if humidity is None:
+    humidity = 95.0
+if cloud is None:
+    cloud = 81.0
+if windspeed is None:
+    windspeed = 13.7
+if winddirection is None:
+    winddirection = 40
+if sunshine is None:
+    sunshine = 0.0
+
+# Debugging step to verify fetched values
+st.write(f"Fetched Weather Data: Pressure={pressure}, Dew Point={dewpoint}, Humidity={humidity}, "
+         f"Cloud Cover={cloud}, Wind Speed={windspeed}, Wind Direction={winddirection}, Sunshine={sunshine}")
+
 
 if location:
     geolocator = Nominatim(user_agent="rainfall_app")
