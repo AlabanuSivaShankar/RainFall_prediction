@@ -75,6 +75,43 @@ st.write("Enter the weather conditions below to predict whether it will rain or 
 # Location-Based Weather Data
 st.subheader("Location-Based Weather Data")
 location = st.text_input("Enter Location (City, Country):")
+# Initialize weather variables with default values
+pressure = 1015.9
+dewpoint = 19.9
+humidity = 95.0
+cloud = 81.0
+windspeed = 13.7
+winddirection = 40
+sunshine = 0.0
+
+if location:
+    geolocator = Nominatim(user_agent="rainfall_app")
+    location_data = geolocator.geocode(location)
+
+    if location_data:
+        lat, lon = location_data.latitude, location_data.longitude
+        st.write(f"Latitude: {lat}, Longitude: {lon}")
+
+        url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            weather_data = response.json()
+            pressure = weather_data['main'].get('pressure', pressure)
+            dewpoint = weather_data['main'].get('humidity', dewpoint)  # Approximate dew point
+            humidity = weather_data['main'].get('humidity', humidity)
+            cloud = weather_data['clouds'].get('all', cloud)
+            windspeed = weather_data['wind'].get('speed', windspeed)
+            winddirection = weather_data['wind'].get('deg', winddirection)
+            sunshine = 0  # OpenWeatherMap does not provide sunshine data
+            
+            st.write(f"Fetched Weather Data: Pressure={pressure}, Dew Point={dewpoint}, Humidity={humidity}, "
+                     f"Cloud Cover={cloud}, Wind Speed={windspeed}, Wind Direction={winddirection}, Sunshine={sunshine}")
+        else:
+            st.error("Failed to fetch weather data. Using default values.")
+    else:
+        st.error("Location not found. Please enter a valid location.")
+
 
 # Ensure parameters have default values before use
 if pressure is None:
