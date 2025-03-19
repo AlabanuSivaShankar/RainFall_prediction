@@ -5,6 +5,7 @@ import requests
 import pickle
 import os
 from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut
 from sklearn.utils import resample
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
@@ -23,44 +24,14 @@ def load_data():
         st.error(f"Error loading dataset: {e}")
         st.stop()
 
-# Preprocess dataset
-def preprocess_data(data):
-    data.columns = data.columns.str.strip()
-    data.drop(columns=["day"], errors='ignore', inplace=True)
-    data["winddirection"].fillna(data["winddirection"].mode()[0], inplace=True)
-    data["windspeed"].fillna(data["windspeed"].median(), inplace=True)
-    data["rainfall"] = data["rainfall"].map({"yes": 1, "no": 0})
-    data.drop(columns=['maxtemp', 'temparature', 'mintemp'], errors='ignore', inplace=True)
-    return data
-
-# Train model
-def train_model(data):
-    df_majority = data[data["rainfall"] == 1]
-    df_minority = data[data["rainfall"] == 0]
-    df_majority_downsampled = resample(df_majority, replace=False, n_samples=len(df_minority), random_state=42)
-    df_balanced = pd.concat([df_majority_downsampled, df_minority]).sample(frac=1, random_state=42).reset_index(drop=True)
-    
-    X = df_balanced.drop(columns=["rainfall"])
-    y = df_balanced["rainfall"]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    
-    rf_model = RandomForestClassifier(random_state=42)
-    rf_model.fit(X_train, y_train)
-    
-    return rf_model, X.columns.tolist()
-
-# Load or train model
-if os.path.exists(MODEL_PATH):
-    with open(MODEL_PATH, "rb") as file:
-        model_data = pickle.load(file)
-    model = model_data["model"]
-    feature_names = model_data["feature_names"]
-else:
-    data = load_data()
-    data = preprocess_data(data)
-    model, feature_names = train_model(data)
-    with open(MODEL_PATH, "wb") as file:
-        pickle.dump({"model": model, "feature_names": feature_names}, file)
+# Reverse geocode function to get location name from coordinates
+def get_location_name(lat, lon):
+    geolocator = Nominatim(user_agent="rainfall_prediction")
+    try:
+        location = geolocator.reverse((lat, lon), exactly_one=True)
+        return location.address if location else "Unknown Location"
+    except GeocoderTimedOut:
+        return "Location fetch timed out"
 
 # Streamlit UI
 st.title("🌧️ Rainfall Prediction App")
@@ -88,8 +59,11 @@ longitude = query_params.get("longitude")
 if latitude and longitude:
     try:
         lat, lon = float(latitude[0]), float(longitude[0])
-        st.write(f"✅ **Detected Location:** Latitude: {lat}, Longitude: {lon}")
+        location_name = get_location_name(lat, lon)  # Get city name
 
+        st.write(f"✅ **Detected Location:** {location_name} (Latitude: {lat}, Longitude: {lon})")
+
+        # Fetch real-time weather data
         url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
         response = requests.get(url)
 
@@ -117,7 +91,6 @@ if latitude and longitude:
             st.error("❌ Failed to fetch weather data. Using default values.")
     except Exception as e:
         st.error(f"❌ Error fetching weather data: {e}")
-
 else:
     st.warning("⚠️ Please allow location access in your browser.")
 
@@ -133,7 +106,8 @@ sunshine = st.slider("Sunshine Hours", 0.0, 24.0, float(default_values.get("suns
 
 # Predict Rainfall
 if st.button("🚀 Predict Rainfall"):
-    input_data = pd.DataFrame([[pressure, dewpoint, humidity, cloud, sunshine, winddirection, windspeed]], columns=feature_names)
+    input_data = pd.DataFrame([[pressure, dewpoint, humidity, cloud, sunshine, winddirection, windspeed]], 
+                              columns=["pressure", "dewpoint", "humidity", "cloud", "sunshine", "winddirection", "windspeed"])
     prediction = model.predict(input_data)
     result = "🌧️ Rainfall Expected" if prediction[0] == 1 else "☀️ No Rainfall"
     st.subheader(f"**Prediction: {result}**")
