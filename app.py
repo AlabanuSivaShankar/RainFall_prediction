@@ -105,13 +105,15 @@ if location:
 
 # User Input Fields (Manual Input as Backup)
 st.subheader("Manual Weather Data Input")
-pressure = st.slider("Pressure (hPa)", 950.0, 1050.0, pressure or 1015.9, 0.1)
-dewpoint = st.slider("Dew Point (°C)", -50.0, 50.0, dewpoint or 19.9, 0.1)
-humidity = st.slider("Humidity (%)", 0.0, 100.0, humidity or 95.0, 0.1)
-cloud = st.slider("Cloud Cover (%)", 0.0, 100.0, cloud or 81.0, 0.1)
-windspeed = st.slider("Wind Speed (km/h)", 0.0, 100.0, windspeed or 13.7, 0.1)
-winddirection = st.slider("Wind Direction (°)", 0, 360, winddirection or 40, 1)
-sunshine = st.slider("Sunshine Hours", 0.0, 24.0, sunshine or 0.0, 0.1)
+pressure = st.slider("Pressure (hPa)", 950.0, 1050.0, 1015.9 if pressure is None else pressure, 0.1)
+dewpoint = st.slider("Dew Point (°C)", -50.0, 50.0, 19.9 if dewpoint is None else dewpoint, 0.1)
+humidity = st.slider("Humidity (%)", 0.0, 100.0, 95.0 if humidity is None else humidity, 0.1)
+cloud = st.slider("Cloud Cover (%)", 0.0, 100.0, 81.0 if cloud is None else cloud, 0.1)
+windspeed = st.slider("Wind Speed (km/h)", 0.0, 100.0, 13.7 if windspeed is None else windspeed, 0.1)
+winddirection = st.slider("Wind Direction (°)", 0, 360, 40 if winddirection is None else winddirection, 1)
+sunshine = st.slider("Sunshine Hours", 0.0, 24.0, 0.0 if sunshine is None else sunshine, 0.1)
+
+
 
 # Prediction Button
 if st.button("Predict Rainfall"):
