@@ -12,6 +12,8 @@ import os
 from geopy.geocoders import Nominatim
 import requests
 
+API_KEY = os.getenv("WEATHER_API_KEY")
+
 # Constants
 DATA_PATH = "https://raw.githubusercontent.com/AlabanuSivaShankar/RainFall_prediction/main/Rainfall.csv"
 MODEL_PATH = "rainfall_prediction_model.pkl"
