@@ -146,7 +146,8 @@ if st.button("🚀 Predict Rainfall for Today"):
 if st.button("📅 Predict Rainfall for Next 6 Months"):
     st.subheader("🌧️ Rainfall Prediction for Next 6 Months")
     
-    # Fetch historical weather data for the location (example: previous year's data)
+    # Fetch historical weather data for the location (example: 20 years of data)
+    # Replace this with actual historical data from an API or database
     historical_data = {
         "pressure": [1010, 1015, 1020, 1018, 1012, 1008],  # Example historical pressure values
         "humidity": [80, 85, 90, 88, 82, 78],  # Example historical humidity values
