@@ -147,18 +147,24 @@ if st.button("🚀 Predict Rainfall for Today"):
 if st.button("📅 Predict Rainfall for Next 6 Months"):
     st.subheader("🌧️ Rainfall Prediction for Next 6 Months")
     
-    # Fetch historical weather data for the location (example: 20 years of data)
-    # Replace this with actual historical data from an API or database
-    historical_data = {
-        "pressure": [1010, 1015, 1020, 1018, 1012, 1008],  # Example historical pressure values
-        "humidity": [80, 85, 90, 88, 82, 78],  # Example historical humidity values
-        "dewpoint": [15, 16, 17, 16.5, 15.5, 14],  # Example historical dew point values
-        "cloud": [70, 75, 80, 78, 72, 68],  # Example historical cloud cover values
-        "windspeed": [10, 12, 14, 13, 11, 9],  # Example historical wind speed values
-        "winddirection": [30, 35, 40, 38, 32, 28],  # Example historical wind direction values
-        "sunshine": [5, 6, 7, 6.5, 5.5, 4],  # Example historical sunshine values
-        "rainfall_probability": [70, 75, 80, 78, 72, 68],  # Example historical rainfall probabilities
-    }
+    # Fetch historical weather data for the location (past 20 years)
+    # Replace this with actual API calls to fetch historical data
+    def fetch_historical_data(lat, lon, years=20):
+        # Example: Simulate fetching historical data for the past 20 years
+        historical_data = {
+            "pressure": [1010, 1015, 1020, 1018, 1012, 1008],  # Example historical pressure values
+            "humidity": [80, 85, 90, 88, 82, 78],  # Example historical humidity values
+            "dewpoint": [15, 16, 17, 16.5, 15.5, 14],  # Example historical dew point values
+            "cloud": [70, 75, 80, 78, 72, 68],  # Example historical cloud cover values
+            "windspeed": [10, 12, 14, 13, 11, 9],  # Example historical wind speed values
+            "winddirection": [30, 35, 40, 38, 32, 28],  # Example historical wind direction values
+            "sunshine": [5, 6, 7, 6.5, 5.5, 4],  # Example historical sunshine values
+            "rainfall_probability": [70, 75, 80, 78, 72, 68],  # Example historical rainfall probabilities
+        }
+        return historical_data
+    
+    # Fetch historical data for the location
+    historical_data = fetch_historical_data(lat, lon)
     
     # Simulate future weather parameters based on historical trends
     months = []
