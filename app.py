@@ -170,7 +170,7 @@ if st.button("📅 Predict Rainfall for Next 6 Months"):
         predictions.append(prediction[0])
         percentages.append(np.random.randint(30, 90) if prediction[0] == 1 else np.random.randint(0, 30))
     
-    # Display results
+    # Display results in a table
     results_df = pd.DataFrame({
         "Month": months,
         "Prediction": ["🌧️ Rainfall Expected" if p == 1 else "☀️ No Rainfall" for p in predictions],
@@ -178,3 +178,13 @@ if st.button("📅 Predict Rainfall for Next 6 Months"):
     })
     
     st.table(results_df)
+    
+    # Plot bar graph
+    st.subheader("📊 Rainfall Probability Over Next 6 Months")
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x=months, y=percentages, palette="viridis")
+    plt.title("Rainfall Probability Over Next 6 Months")
+    plt.xlabel("Month")
+    plt.ylabel("Rainfall Probability (%)")
+    plt.ylim(0, 100)
+    st.pyplot(plt)
