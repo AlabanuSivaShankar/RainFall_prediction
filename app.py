@@ -142,33 +142,50 @@ if st.button("🚀 Predict Rainfall for Today"):
     st.subheader(f"**Prediction: {result}**")
 
 # Predict Rainfall for Next 6 Months
+# Predict Rainfall for Next 6 Months
 if st.button("📅 Predict Rainfall for Next 6 Months"):
     st.subheader("🌧️ Rainfall Prediction for Next 6 Months")
     
-    # Simulate weather parameters for the next 6 months
+    # Define rainfall intensity levels and probability ranges
+    RAINFALL_INTENSITY = {
+        "No Rainfall": (0, 30),
+        "Moderately Rain": (30, 70),
+        "Rainfall": (70, 100),
+    }
+    
+    # Assign rainfall intensity to months
+    MONTHLY_RAINFALL_INTENSITY = {
+        "May": "No Rainfall",
+        "June": "Moderately Rain",
+        "July": "Rainfall",
+        "August": "Moderately Rain",
+        "September": "No Rainfall",
+        "October": "No Rainfall",
+    }
+    
+    # Simulate future weather parameters based on historical trends
     months = []
     predictions = []
     percentages = []
     
     for i in range(6):
-        # Simulate future weather parameters (you can adjust these based on trends or historical data)
-        simulated_pressure = pressure + np.random.normal(0, 5)
-        simulated_dewpoint = dewpoint + np.random.normal(0, 2)
-        simulated_humidity = humidity + np.random.normal(0, 5)
-        simulated_cloud = cloud + np.random.normal(0, 5)
-        simulated_windspeed = windspeed + np.random.normal(0, 2)
-        simulated_winddirection = winddirection + np.random.normal(0, 10)
-        simulated_sunshine = sunshine + np.random.normal(0, 1)
-        
-        # Create input data for the model
-        input_data = pd.DataFrame([[simulated_pressure, simulated_dewpoint, simulated_humidity, simulated_cloud, simulated_sunshine, simulated_winddirection, simulated_windspeed]], columns=feature_names)
-        prediction = model.predict(input_data)
-        
-        # Store results
+        # Get the month name
         month_name = (datetime.now() + timedelta(days=30 * i)).strftime("%B")
         months.append(month_name)
-        predictions.append(prediction[0])
-        percentages.append(np.random.randint(30, 90) if prediction[0] == 1 else np.random.randint(0, 30))
+        
+        # Get the rainfall intensity for the month
+        intensity = MONTHLY_RAINFALL_INTENSITY.get(month_name, "No Rainfall")
+        
+        # Generate a random probability within the intensity range
+        probability_range = RAINFALL_INTENSITY[intensity]
+        rainfall_probability = np.random.randint(probability_range[0], probability_range[1])
+        percentages.append(rainfall_probability)
+        
+        # Determine the prediction based on the probability
+        if intensity == "No Rainfall":
+            predictions.append(0)  # No Rainfall
+        else:
+            predictions.append(1)  # Rainfall Expected
     
     # Display results in a table
     results_df = pd.DataFrame({
