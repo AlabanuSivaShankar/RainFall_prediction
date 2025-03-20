@@ -143,6 +143,7 @@ if st.button("🚀 Predict Rainfall for Today"):
     st.subheader(f"**Prediction: {result}**")
 
 # Predict Rainfall for Next 6 Months
+# Predict Rainfall for Next 6 Months
 if st.button("📅 Predict Rainfall for Next 6 Months"):
     st.subheader("🌧️ Rainfall Prediction for Next 6 Months")
     
@@ -156,6 +157,7 @@ if st.button("📅 Predict Rainfall for Next 6 Months"):
         "windspeed": [10, 12, 14, 13, 11, 9],  # Example historical wind speed values
         "winddirection": [30, 35, 40, 38, 32, 28],  # Example historical wind direction values
         "sunshine": [5, 6, 7, 6.5, 5.5, 4],  # Example historical sunshine values
+        "rainfall_probability": [70, 75, 80, 78, 72, 68],  # Example historical rainfall probabilities
     }
     
     # Simulate future weather parameters based on historical trends
@@ -181,7 +183,10 @@ if st.button("📅 Predict Rainfall for Next 6 Months"):
         month_name = (datetime.now() + timedelta(days=30 * i)).strftime("%B")
         months.append(month_name)
         predictions.append(prediction[0])
-        percentages.append(np.random.randint(30, 90) if prediction[0] == 1 else np.random.randint(0, 30))
+        
+        # Use historical rainfall probability instead of random values
+        rainfall_probability = historical_data["rainfall_probability"][i]
+        percentages.append(rainfall_probability)
     
     # Display results in a table
     results_df = pd.DataFrame({
