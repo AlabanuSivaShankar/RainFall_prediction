@@ -93,6 +93,7 @@ if location:
             lat, lon = location_data.latitude, location_data.longitude
             st.write(f"Latitude: {lat}, Longitude: {lon}")
 
+            # Fetch current weather data
             url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
             response = requests.get(url)
 
@@ -145,20 +146,31 @@ if st.button("🚀 Predict Rainfall for Today"):
 if st.button("📅 Predict Rainfall for Next 6 Months"):
     st.subheader("🌧️ Rainfall Prediction for Next 6 Months")
     
-    # Simulate weather parameters for the next 6 months
+    # Fetch historical weather data for the location (example: previous year's data)
+    historical_data = {
+        "pressure": [1010, 1015, 1020, 1018, 1012, 1008],  # Example historical pressure values
+        "humidity": [80, 85, 90, 88, 82, 78],  # Example historical humidity values
+        "dewpoint": [15, 16, 17, 16.5, 15.5, 14],  # Example historical dew point values
+        "cloud": [70, 75, 80, 78, 72, 68],  # Example historical cloud cover values
+        "windspeed": [10, 12, 14, 13, 11, 9],  # Example historical wind speed values
+        "winddirection": [30, 35, 40, 38, 32, 28],  # Example historical wind direction values
+        "sunshine": [5, 6, 7, 6.5, 5.5, 4],  # Example historical sunshine values
+    }
+    
+    # Simulate future weather parameters based on historical trends
     months = []
     predictions = []
     percentages = []
     
     for i in range(6):
-        # Simulate future weather parameters (you can adjust these based on trends or historical data)
-        simulated_pressure = pressure + np.random.normal(0, 5)
-        simulated_dewpoint = dewpoint + np.random.normal(0, 2)
-        simulated_humidity = humidity + np.random.normal(0, 5)
-        simulated_cloud = cloud + np.random.normal(0, 5)
-        simulated_windspeed = windspeed + np.random.normal(0, 2)
-        simulated_winddirection = winddirection + np.random.normal(0, 10)
-        simulated_sunshine = sunshine + np.random.normal(0, 1)
+        # Use historical data for the corresponding month
+        simulated_pressure = historical_data["pressure"][i]
+        simulated_humidity = historical_data["humidity"][i]
+        simulated_dewpoint = historical_data["dewpoint"][i]
+        simulated_cloud = historical_data["cloud"][i]
+        simulated_windspeed = historical_data["windspeed"][i]
+        simulated_winddirection = historical_data["winddirection"][i]
+        simulated_sunshine = historical_data["sunshine"][i]
         
         # Create input data for the model
         input_data = pd.DataFrame([[simulated_pressure, simulated_dewpoint, simulated_humidity, simulated_cloud, simulated_sunshine, simulated_winddirection, simulated_windspeed]], columns=feature_names)
