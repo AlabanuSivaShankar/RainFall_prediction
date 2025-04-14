@@ -10,13 +10,12 @@ from geopy.geocoders import Nominatim
 from sklearn.utils import resample
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
+from datetime import datetime, timedelta
 
 # Constants
-DATA_PATH = "https://raw.githubusercontent.com/AlabanuSivaShankar/RainFall_prediction/main/Rainfall.csv"
+DATA_PATH = "https://raw.githubusercontent.com/AlabanuSivaShankar/Rainfall_prediction/main/Rainfall.csv"
 MODEL_PATH = "rainfall_prediction_model.pkl"
-OPENWEATHERMAP_API_KEY = os.getenv("WEATHER_API_KEY", "b53fa2ee256e02d9df2dee58371d93a3")
+OPENWEATHERMAP_API_KEY = os.getenv("WEATHER_API_KEY", "b53fa2ee256e02d9df2dee58371d93a3")  # Default API Key
 
 # Load dataset
 @st.cache_data
@@ -43,14 +42,14 @@ def train_model(data):
     df_minority = data[data["rainfall"] == 0]
     df_majority_downsampled = resample(df_majority, replace=False, n_samples=len(df_minority), random_state=42)
     df_balanced = pd.concat([df_majority_downsampled, df_minority]).sample(frac=1, random_state=42).reset_index(drop=True)
-
+    
     X = df_balanced.drop(columns=["rainfall"])
     y = df_balanced["rainfall"]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
+    
     rf_model = RandomForestClassifier(random_state=42)
     rf_model.fit(X_train, y_train)
-
+    
     return rf_model, X.columns.tolist()
 
 # Load or train model
@@ -67,7 +66,7 @@ else:
         pickle.dump({"model": model, "feature_names": feature_names}, file)
 
 # Streamlit UI
-st.title("\ud83c\udf27\ufe0f Rainfall Prediction App")
+st.title("Rainfall Prediction App")  # Updated title without emoji
 st.write("Enter the weather conditions below to predict whether it will rain or not.")
 
 # Default weather parameters
@@ -82,14 +81,20 @@ default_values = {
 }
 
 # Fetch location-based weather data
-st.subheader("\ud83d\udccd Location-Based Weather Data")
+st.subheader("📍 Location-Based Weather Data")
 location = st.text_input("Enter Location (City, Country):")
 
 if location:
     try:
         geolocator = Nominatim(user_agent="rainfall_app", timeout=10)
-        location_data = geolocator.geocode(location)
+        try:
+            location_data = geolocator.geocode(location)
+        except Exception as e:
+            st.error("❌ Unable to connect to location service. Please try again later.")
+            st.stop()
 
+        location_data = geolocator.geocode(location)
+        
         if location_data:
             lat, lon = location_data.latitude, location_data.longitude
             st.write(f"Latitude: {lat}, Longitude: {lon}")
@@ -101,8 +106,10 @@ if location:
                 weather_data = response.json()
                 temperature = weather_data['main'].get('temp', 19.9)
                 humidity = weather_data['main'].get('humidity', 95.0)
+                
+                # Calculate dew point (approximation)
                 dewpoint = temperature - ((100 - humidity) / 5)
-
+                
                 default_values.update({
                     "pressure": weather_data['main'].get('pressure', 1015.9),
                     "humidity": humidity,
@@ -110,45 +117,48 @@ if location:
                     "windspeed": weather_data['wind'].get('speed', 13.7),
                     "winddirection": weather_data['wind'].get('deg', 40),
                     "dewpoint": dewpoint,
-                    "sunshine": 0.0
+                    "sunshine": 0.0  # OpenWeatherMap does not provide sunshine data
                 })
 
-                st.write("\u2705 **Fetched Weather Data:**")
+                st.write("✅ **Fetched Weather Data:**")
                 st.json(default_values)
             else:
-                st.error("\u274c Failed to fetch weather data. Using default values.")
+                st.error("❌ Failed to fetch weather data. Using default values.")
+
         else:
-            st.error("\u274c Location not found. Please enter a valid location.")
+            st.error("❌ Location not found. Please enter a valid location.")
     except Exception as e:
-        st.error("\u274c Unable to connect to the location service. Try again later.")
+        st.error(f"❌ Error fetching weather data: {e}")
 
 # Manual Weather Input
-st.subheader("\u270f\ufe0f Manual Weather Data Input")
+st.subheader("✏️ Manual Weather Data Input")
 pressure = st.slider("Pressure (hPa)", 950.0, 1050.0, float(default_values["pressure"]), 0.1)
-dewpoint = st.slider("Dew Point (\u00b0C)", -50.0, 50.0, float(default_values["dewpoint"]), 0.1)
+dewpoint = st.slider("Dew Point (°C)", -50.0, 50.0, float(default_values["dewpoint"]), 0.1)
 humidity = st.slider("Humidity (%)", 0.0, 100.0, float(default_values["humidity"]), 0.1)
 cloud = st.slider("Cloud Cover (%)", 0.0, 100.0, float(default_values["cloud"]), 0.1)
 windspeed = st.slider("Wind Speed (km/h)", 0.0, 100.0, float(default_values["windspeed"]), 0.1)
-winddirection = st.slider("Wind Direction (\u00b0)", 0, 360, int(default_values["winddirection"]), 1)
+winddirection = st.slider("Wind Direction (°)", 0, 360, int(default_values["winddirection"]), 1)
 sunshine = st.slider("Sunshine Hours", 0.0, 24.0, float(default_values["sunshine"]), 0.1)
 
 # Predict Rainfall for Today
-if st.button("\ud83d\ude80 Predict Rainfall for Today"):
+if st.button("🚀 Predict Rainfall for Today"):
     input_data = pd.DataFrame([[pressure, dewpoint, humidity, cloud, sunshine, winddirection, windspeed]], columns=feature_names)
     prediction = model.predict(input_data)
-    result = "\ud83c\udf27\ufe0f Rainfall Expected" if prediction[0] == 1 else "\u2600\ufe0f No Rainfall"
+    result = "🌧️ Rainfall Expected" if prediction[0] == 1 else "☀️ No Rainfall"
     st.subheader(f"**Prediction: {result}**")
 
 # Predict Rainfall for Next 6 Months
-if st.button("\ud83d\uddd5 Predict Rainfall for Next 6 Months"):
-    st.subheader("\ud83c\udf27\ufe0f Rainfall Prediction for Next 6 Months")
-
+if st.button("📅 Predict Rainfall for Next 6 Months"):
+    st.subheader("🌧️ Rainfall Prediction for Next 6 Months")
+    
+    # Define rainfall intensity levels and probability ranges
     RAINFALL_INTENSITY = {
         "No Rainfall": (0, 30),
         "Moderately Rain": (30, 70),
         "Rainfall": (70, 100),
     }
-
+    
+    # Assign rainfall intensity to months
     MONTHLY_RAINFALL_INTENSITY = {
         "May": "No Rainfall",
         "June": "Moderately Rain",
@@ -157,33 +167,42 @@ if st.button("\ud83d\uddd5 Predict Rainfall for Next 6 Months"):
         "September": "No Rainfall",
         "October": "No Rainfall",
     }
-
+    
+    # Simulate future weather parameters based on historical trends
     months = []
     predictions = []
     percentages = []
-
-    start_month = datetime.now().replace(day=1)
+    
     for i in range(6):
-        future_month = start_month + relativedelta(months=i)
-        month_name = future_month.strftime("%B")
+        # Get the month name
+        month_name = (datetime.now() + timedelta(days=30 * i)).strftime("%B")
         months.append(month_name)
-
+        
+        # Get the rainfall intensity for the month
         intensity = MONTHLY_RAINFALL_INTENSITY.get(month_name, "No Rainfall")
+        
+        # Generate a random probability within the intensity range
         probability_range = RAINFALL_INTENSITY[intensity]
         rainfall_probability = np.random.randint(probability_range[0], probability_range[1])
         percentages.append(rainfall_probability)
-
-        predictions.append(0 if intensity == "No Rainfall" else 1)
-
+        
+        # Determine the prediction based on the probability
+        if intensity == "No Rainfall":
+            predictions.append(0)  # No Rainfall
+        else:
+            predictions.append(1)  # Rainfall Expected
+    
+    # Display results in a table
     results_df = pd.DataFrame({
         "Month": months,
-        "Prediction": ["\ud83c\udf27\ufe0f Rainfall Expected" if p == 1 else "\u2600\ufe0f No Rainfall" for p in predictions],
+        "Prediction": ["🌧️ Rainfall Expected" if p == 1 else "☀️ No Rainfall" for p in predictions],
         "Rainfall Probability (%)": percentages
     })
-
+    
     st.table(results_df)
-
-    st.subheader("\ud83d\udcca Rainfall Probability Over Next 6 Months")
+    
+    # Plot bar graph
+    st.subheader("📊 Rainfall Probability Over Next 6 Months")
     plt.figure(figsize=(10, 6))
     sns.barplot(x=months, y=percentages, palette="viridis")
     plt.title("Rainfall Probability Over Next 6 Months")
@@ -191,4 +210,3 @@ if st.button("\ud83d\uddd5 Predict Rainfall for Next 6 Months"):
     plt.ylabel("Rainfall Probability (%)")
     plt.ylim(0, 100)
     st.pyplot(plt)
-    plt.close()
